@@ -8,10 +8,13 @@ class Database:
         self.user_name = "harpreet"
         self.user_access = ["C", "R", "U", "D"]
         self.schema = None
+        self.schema_name = ""
         self.schemas_directory = location
         self.create_schema_pattern = re.compile(r"create (database|schema)\s+(\w+)\s*;?$", re.IGNORECASE)
         self.use_schema_pattern = re.compile(r"use\s+(\w+)\s*;?$", re.IGNORECASE)
         self.create_table_pattern = re.compile(r"create table\s+(\w+)\s+\((.*)\)\s*;?$", re.IGNORECASE)
+        self.column_pattern = re.compile(r"(\w+)\s+(int|varchar\s*\(\s*\d+\s*\)|decimal\s*\(\s*\d+\s*@\s*\d+\s*\))"
+                                         r"(\s*not\s*null)?(\s*primary\s*key)?$", re.IGNORECASE)
 
     def parse_query(self, query):
         # create schema query
@@ -26,6 +29,13 @@ class Database:
         elif self.create_table_pattern.search(query):
             table_name = self.create_table_pattern.search(query).group(1)
             columns = self.create_table_pattern.search(query).group(2)
+
+            # change "," in decimal field to "@"
+            decimal_field = re.search("decimal\s*\(\s*\d+\s*(,)\s*\d+\s*\)", columns)
+            if decimal_field:
+                comma_index = decimal_field.span(1)[0]
+                columns = columns[:comma_index] + "@" + columns[comma_index + 1:]
+
             columns = columns.split(",")
             columns = list(map(lambda x: x.strip(), columns))
             self.create_table(table_name, columns)
@@ -51,9 +61,9 @@ class Database:
             #       print("You don't have access to this schema")
             #   else:
             #       self.user_access = access_level
-            #
             self.schema = json.load(open(os.path.join(self.schemas_directory, schema_name), "r"))
-            print("Current Schema:", schema_name)
+            self.schema_name = schema_name
+            print("Current Schema:", self.schema_name)
         else:
             print("No such schema exists!")
 
@@ -67,6 +77,35 @@ class Database:
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
             return
+        if table_name in self.schema.keys():
+            print("Table name already exists")
+            return
+        values = [{}]
+        for column in columns:
+            if self.column_pattern.search(column):
+                pk = 0
+                nn = 0
+                column_name = self.column_pattern.search(column).group(1).strip()
+                column_type = self.column_pattern.search(column).group(2).strip()
+                if "int" in column_type.lower():
+                    column_type = "int"
+                elif "varchar" in column_type.lower():
+                    column_type = "str"
+                elif "decimal" in column_type.lower():
+                    column_type = "float"
+                if self.column_pattern.search(column).group(3):
+                    nn = 1
+                if self.column_pattern.search(column).group(4):
+                    pk = 1
+                meta_data = {"PK": pk, "NN": nn, "type": column_type}
+                values[0][column_name] = meta_data
+            else:
+                print("Invalid Syntax! Please refer the sql syntax for creating table.")
+                return
+        self.schema[table_name] = {}
+        self.schema[table_name]["values"] = values
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        print("created table:", table_name)
 
     def select_table(self):
         if self.schema is None:
