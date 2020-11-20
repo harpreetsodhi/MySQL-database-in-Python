@@ -10,11 +10,12 @@ class Database:
         self.schema = None
         self.schema_name = ""
         self.schemas_directory = location
-        self.create_schema_pattern = re.compile(r"create (database|schema)\s+(\w+)\s*;?$", re.IGNORECASE)
-        self.use_schema_pattern = re.compile(r"use\s+(\w+)\s*;?$", re.IGNORECASE)
-        self.create_table_pattern = re.compile(r"create table\s+(\w+)\s+\((.*)\)\s*;?$", re.IGNORECASE)
+        self.create_schema_pattern = re.compile(r"^\s*create\s+(\s*database|schema\s*)\s+(\w+)\s*;?\s*$", re.IGNORECASE)
+        self.use_schema_pattern = re.compile(r"^\s*use\s+(\w+)\s*;?\s*$", re.IGNORECASE)
+        self.create_table_pattern = re.compile(r"^\s*create\s+table\s+(\w+)\s+\((.*)\)\s*;?\s*$", re.IGNORECASE)
         self.column_pattern = re.compile(r"(\w+)\s+(int|varchar\s*\(\s*\d+\s*\)|decimal\s*\(\s*\d+\s*@\s*\d+\s*\))"
-                                         r"(\s*not\s*null)?(\s*primary\s*key)?$", re.IGNORECASE)
+                                         r"(\s+not\s+null)?(\s+primary\s+key)?$", re.IGNORECASE)
+        self.select_table_pattern = re.compile(r"^\s*select\s+(.*)\s+from\s+(\w+)(\s+where\s+.*)?\s*$", re.IGNORECASE)
 
     def parse_query(self, query):
         # create schema query
@@ -39,6 +40,21 @@ class Database:
             columns = columns.split(",")
             columns = list(map(lambda x: x.strip(), columns))
             self.create_table(table_name, columns)
+
+        # select table query
+        elif self.select_table_pattern.search(query):
+            columns = self.select_table_pattern.search(query).group(1)
+            table_name = self.select_table_pattern.search(query).group(2)
+            where_condition = self.select_table_pattern.search(query).group(3)
+            if where_condition:
+                where_condition = re.sub(";", "", where_condition, flags=re.IGNORECASE)
+                where_condition = re.sub("where ", "", where_condition, flags=re.IGNORECASE)
+                where_condition = re.sub("=", "==", where_condition, flags=re.IGNORECASE)
+                where_condition = re.sub(" or ", " or ", where_condition,flags= re.IGNORECASE)
+                where_condition = re.sub(" and ", " and ", where_condition, flags=re.IGNORECASE)
+            columns = columns.split(",")
+            columns = list(map(lambda x: x.strip(), columns))
+            self.select_table(table_name, columns, where_condition)
 
         # incorrect query
         else:
@@ -107,13 +123,36 @@ class Database:
         json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
         print("created table:", table_name)
 
-    def select_table(self):
+    def select_table(self, table_name, columns, where_condition):
         if self.schema is None:
             print("Select a schema first")
             return
         if "R" not in self.user_access:
             print("You don't have read access to this schema")
             return
+        if table_name not in self.schema.keys():
+            print("Table does not exist")
+            return
+        meta_data = self.schema[table_name]["values"][0]
+        for column in columns:
+            if column == "*":
+                continue
+            else:
+                if column not in meta_data.keys():
+                    print("Column Error! Column name does not exist")
+                    return
+        rows = self.schema[table_name]["values"][1:]
+        if where_condition:
+            try:
+                rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
+            except:
+                print("Error! Invalid where clause")
+                return
+        print("Number of rows:", len(rows))
+        if "*" in columns:
+            print(json.dumps(rows, indent=2))
+            return
+        print(json.dumps([{i: row[i] for i in columns} for row in rows], indent=2))
 
     def update_table_name(self):
         if self.schema is None:
@@ -137,14 +176,6 @@ class Database:
             return
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
-            return
-
-    def select_rows(self):
-        if self.schema is None:
-            print("Select a schema first")
-            return
-        if "R" not in self.user_access:
-            print("You don't have read access to this schema")
             return
 
     def update_rows(self):
