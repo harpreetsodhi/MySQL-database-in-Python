@@ -174,7 +174,7 @@ class Database:
         rows = self.schema[table_name]["values"][1:]
         if where_condition:
             try:
-                rows_to_be_updated = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
+                rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
             except:
                 print("Error! Invalid where clause")
                 return
@@ -183,12 +183,20 @@ class Database:
         except:
             print("Error! Invalid update parameters")
             return
-        rows_count = len(rows_to_be_updated)
+        rows_count = len(rows)
+        rows = self.schema[table_name]["values"][1:]
+
         where_filter = lambda row: eval(f"{where_condition}", locals(), row)
         updated_rows = lambda row: exec(f"{update_condition}", locals(), row)
-        for row in rows:
-            if where_filter(row):
+
+        if where_condition:
+            for row in rows:
+                if where_filter(row):
+                    updated_rows(row)
+        else:
+            for row in rows:
                 updated_rows(row)
+
         json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
         print("Number of rows updated:", rows_count)
 
