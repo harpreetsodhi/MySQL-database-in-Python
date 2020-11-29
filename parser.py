@@ -16,6 +16,7 @@ class Database:
         self.column_pattern = re.compile(r"(\w+)\s+(int|varchar\s*\(\s*\d+\s*\)|decimal\s*\(\s*\d+\s*@\s*\d+\s*\))"
                                          r"(\s+not\s+null)?(\s+primary\s+key)?$", re.IGNORECASE)
         self.select_table_pattern = re.compile(r"^\s*select\s+(.*)\s+from\s+(\w+)(\s+where\s+.*)?\s*$", re.IGNORECASE)
+        self.update_table_pattern = re.compile(r"^\s*update\s+(\w+)\s+set(.*)\s*$", re.IGNORECASE)
 
     def parse_query(self, query):
         # create schema query
@@ -47,14 +48,20 @@ class Database:
             table_name = self.select_table_pattern.search(query).group(2)
             where_condition = self.select_table_pattern.search(query).group(3)
             if where_condition:
-                where_condition = re.sub(";", "", where_condition, flags=re.IGNORECASE)
-                where_condition = re.sub("where ", "", where_condition, flags=re.IGNORECASE)
-                where_condition = re.sub("=", "==", where_condition, flags=re.IGNORECASE)
-                where_condition = re.sub(" or ", " or ", where_condition,flags= re.IGNORECASE)
-                where_condition = re.sub(" and ", " and ", where_condition, flags=re.IGNORECASE)
+                where_condition = clean_where(where_condition)
             columns = columns.split(",")
             columns = list(map(lambda x: x.strip(), columns))
             self.select_table(table_name, columns, where_condition)
+
+        # update table query
+        elif self.update_table_pattern.search(query):
+            table_name = self.update_table_pattern.search(query).group(1)
+            values = self.update_table_pattern.search(query).group(2)
+            where_condition = re.search(r"where\s+.*", values, flags=re.IGNORECASE)
+            if where_condition:
+                where_condition = clean_where(where_condition.group())
+            values = re.sub(r"where\s+.*", "", values, flags=re.IGNORECASE)
+            self.update_table(table_name, values.strip(), where_condition)
 
         # incorrect query
         else:
@@ -154,13 +161,36 @@ class Database:
             return
         print(json.dumps([{i: row[i] for i in columns} for row in rows], indent=2))
 
-    def update_table_name(self):
+    def update_table(self, table_name, update_condition, where_condition):
         if self.schema is None:
             print("Select a schema first")
             return
         if "U" not in self.user_access:
             print("You don't have update access to this schema")
             return
+        if table_name not in self.schema.keys():
+            print("Table does not exist")
+            return
+        rows = self.schema[table_name]["values"][1:]
+        if where_condition:
+            try:
+                rows_to_be_updated = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
+            except:
+                print("Error! Invalid where clause")
+                return
+        try:
+            map(lambda row: exec(f"{update_condition}", locals(), row), rows)
+        except:
+            print("Error! Invalid update parameters")
+            return
+        rows_count = len(rows_to_be_updated)
+        where_filter = lambda row: eval(f"{where_condition}", locals(), row)
+        updated_rows = lambda row: exec(f"{update_condition}", locals(), row)
+        for row in rows:
+            if where_filter(row):
+                updated_rows(row)
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        print("Number of rows updated:", rows_count)
 
     def delete_table(self):
         if self.schema is None:
@@ -176,14 +206,6 @@ class Database:
             return
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
-            return
-
-    def update_rows(self):
-        if self.schema is None:
-            print("Select a schema first")
-            return
-        if "U" not in self.user_access:
-            print("You don't have update access to this schema")
             return
 
     def delete_rows(self):
@@ -203,6 +225,15 @@ def get_path(schema_name):
 
 def print_error():
     print("Invalid SQL syntax! Try again.")
+
+
+def clean_where(where_condition):
+    where_condition = re.sub("where ", "", where_condition, flags=re.IGNORECASE)
+    where_condition = re.sub(";", "", where_condition, flags=re.IGNORECASE)
+    where_condition = re.sub("=", "==", where_condition, flags=re.IGNORECASE)
+    where_condition = re.sub(" or ", " or ", where_condition, flags=re.IGNORECASE)
+    where_condition = re.sub(" and ", " and ", where_condition, flags=re.IGNORECASE)
+    return where_condition
 
 
 def main():

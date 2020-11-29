@@ -1,0 +1,63 @@
+{
+  "user_table": {
+    "FKcontraints": {
+      "id": "order_table.col1",
+      "name": "order_table.col2"
+    },
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        }
+      },
+      {
+        "id": 1,
+        "name": "Harpreet",
+        "salary": 45.56
+      },
+      {
+        "id": 2,
+        "name": "Arthy",
+        "salary": 45.56
+      },
+      {
+        "id": 3,
+        "name": "Jeyanth",
+        "salary": 45.56
+      }
+    ]
+  },
+  "employee_table": {
+    "values": [
+      {
+        "Id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "Name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "Salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        }
+      }
+    ]
+  }
+}
