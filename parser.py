@@ -23,15 +23,15 @@ class Database:
         self.delete_rows_pattern = re.compile(r"^\s*delete\s+from\s+(\w+)(\s+where\s+.*)?\s*;?\s*$", re.IGNORECASE)
 
     def parse_query(self, query):
-        # create schema query
+        # create schema
         if self.create_schema_pattern.search(query):
             self.create_schema(self.create_schema_pattern.search(query).group(2))
 
-        # use schema query
+        # use schema
         elif self.use_schema_pattern.search(query):
             self.use_schema(self.use_schema_pattern.search(query).group(1))
 
-        # create table query
+        # create table
         elif self.create_table_pattern.search(query):
             table_name = self.create_table_pattern.search(query).group(1)
             columns = self.create_table_pattern.search(query).group(2)
@@ -46,7 +46,7 @@ class Database:
             columns = list(map(lambda x: x.strip(), columns))
             self.create_table(table_name, columns)
 
-        # select table query
+        # select table
         elif self.select_table_pattern.search(query):
             columns = self.select_table_pattern.search(query).group(1)
             table_name = self.select_table_pattern.search(query).group(2)
@@ -57,7 +57,7 @@ class Database:
             columns = list(map(lambda x: x.strip(), columns))
             self.select_table(table_name, columns, where_condition)
 
-        # update table query
+        # update table
         elif self.update_table_pattern.search(query):
             table_name = self.update_table_pattern.search(query).group(1)
             values = self.update_table_pattern.search(query).group(2)
