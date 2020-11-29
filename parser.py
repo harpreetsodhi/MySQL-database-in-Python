@@ -15,8 +15,12 @@ class Database:
         self.create_table_pattern = re.compile(r"^\s*create\s+table\s+(\w+)\s+\((.*)\)\s*;?\s*$", re.IGNORECASE)
         self.column_pattern = re.compile(r"(\w+)\s+(int|varchar\s*\(\s*\d+\s*\)|decimal\s*\(\s*\d+\s*@\s*\d+\s*\))"
                                          r"(\s+not\s+null)?(\s+primary\s+key)?$", re.IGNORECASE)
-        self.select_table_pattern = re.compile(r"^\s*select\s+(.*)\s+from\s+(\w+)(\s+where\s+.*)?\s*$", re.IGNORECASE)
+        self.select_table_pattern = re.compile(r"^\s*select\s+(.*)\s+from\s+(\w+)(\s+where\s+.*)?\s*;?\s*$", re.IGNORECASE)
         self.update_table_pattern = re.compile(r"^\s*update\s+(\w+)\s+set(.*)\s*$", re.IGNORECASE)
+        self.drop_table_pattern = re.compile(r"^\s*drop\s+table\s+(\w+)\s*;?\s*$", re.IGNORECASE)
+        self.drop_schema_pattern = re.compile(r"^\s*drop\s+database\s+(\w+)\s*;?\s*$", re.IGNORECASE)
+        self.insert_row_pattern = re.compile(r"^\s*insert\s+into\s+(\w+)\s+values\s*\((.*)\)\s*;?\s*$", re.IGNORECASE)
+        self.delete_rows_pattern = re.compile(r"^\s*delete\s+from\s+(\w+)(\s+where\s+.*)?\s*;?\s*$", re.IGNORECASE)
 
     def parse_query(self, query):
         # create schema query
@@ -63,9 +67,45 @@ class Database:
             values = re.sub(r"where\s+.*", "", values, flags=re.IGNORECASE)
             self.update_table(table_name, values.strip(), where_condition)
 
+        # drop table
+        elif self.drop_table_pattern.search(query):
+            table_name = self.drop_table_pattern.search(query).group(1)
+            self.drop_table(table_name)
+
+        # drop schema
+        elif self.drop_schema_pattern.search(query):
+            schema_name = self.drop_schema_pattern.search(query).group(1)
+            self.drop_schema(schema_name)
+
+        # insert row
+        elif self.insert_row_pattern.search(query):
+            table_name = self.insert_row_pattern.search(query).group(1)
+            values = self.insert_row_pattern.search(query).group(2)
+            values = values.split(",")
+            values = list(map(lambda x: x.strip(), values))
+
+            for i in range(len(values)):
+                if values[i].isdigit():
+                    values[i] = int(values[i])
+                else:
+                    try:
+                        values[i] = float(values[i])
+                    except ValueError:
+                        values[i] = re.sub("'", "", values[i])
+                        values[i] = re.sub('"', '', values[i])
+            self.insert_row(table_name, values)
+
+        # delete rows
+        elif self.delete_rows_pattern.search(query):
+            table_name = self.delete_rows_pattern.search(query).group(1)
+            where_condition = self.delete_rows_pattern.search(query).group(2)
+            if where_condition:
+                where_condition = clean_where(where_condition)
+            self.delete_rows(table_name, where_condition)
+
         # incorrect query
         else:
-            print_error()
+            print("Invalid SQL syntax! Try again.")
 
     def create_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
@@ -90,8 +130,12 @@ class Database:
         else:
             print("No such schema exists!")
 
-    def drop_schema(self):
-        pass
+    def drop_schema(self, schema_name):
+        if schema_name in os.listdir(self.schemas_directory):
+            os.remove(os.path.join(self.schemas_directory, schema_name))
+            print("Dropped", schema_name)
+        else:
+            print("No such schema exists!")
 
     def create_table(self, table_name, columns):
         if self.schema is None:
@@ -200,39 +244,74 @@ class Database:
         json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
         print("Number of rows updated:", rows_count)
 
-    def delete_table(self):
+    def drop_table(self, table_name):
         if self.schema is None:
             print("Select a schema first")
             return
         if "D" not in self.user_access:
             print("You don't have delete access to this schema")
             return
+        if table_name not in self.schema.keys():
+            print("Table does not exist")
+            return
+        self.schema.pop(table_name, None)
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        print("dropped", table_name)
 
-    def create_row(self):
+    def insert_row(self, table_name, values):
         if self.schema is None:
             print("Select a schema first")
             return
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
             return
+        if table_name not in self.schema.keys():
+            print("Table does not exist")
+            return
+        column_names = list(self.schema[table_name]['values'][0].keys())
+        no_of_columns = len(column_names)
+        if len(values) != no_of_columns:
+            print("Invalid Syntax! Please refer the sql syntax for inserting rows.")
+            return
+        row = {}
+        for i in range(no_of_columns):
+            row[column_names[i]] = values[i]
+        self.schema[table_name]["values"].append(row)
+        print("1 row inserted")
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
 
-    def delete_rows(self):
+    def delete_rows(self, table_name, where_condition):
         if self.schema is None:
             print("Select a schema first")
             return
         if "D" not in self.user_access:
             print("You don't have delete access to this schema")
             return
+        if table_name not in self.schema.keys():
+            print("Table does not exist")
+            return
+        rows = self.schema[table_name]["values"][1:]
+        filtered_rows = []
+        if where_condition:
+            try:
+                filtered_rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
+            except:
+                print("Error! Invalid where clause")
+                return
+        else:
+            self.schema[table_name]["values"] = self.schema[table_name]["values"][0:1]
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+            print(len(rows), "rows deleted")
+            return
+        self.schema[table_name]["values"][1:] = [row for row in rows if row not in filtered_rows]
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        print(len(filtered_rows), "rows deleted")
 
 
 def get_path(schema_name):
     if not os.path.exists(schema_name):
         os.mkdir(schema_name)
     return os.path.join(os.getcwd(), schema_name)
-
-
-def print_error():
-    print("Invalid SQL syntax! Try again.")
 
 
 def clean_where(where_condition):
