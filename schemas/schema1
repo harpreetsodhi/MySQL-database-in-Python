@@ -1,0 +1,110 @@
+{
+  "user_table": {
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        },
+        "d_id": {
+          "PK": 0,
+          "NN": 0,
+          "type": "int"
+        }
+      },
+      {
+        "id": 1,
+        "name": "Harpreet",
+        "salary": 45.56
+      },
+      {
+        "id": 2,
+        "name": "Arthy",
+        "salary": 45.56
+      },
+      {
+        "id": 3,
+        "name": "Jeyanth",
+        "salary": 45.56
+      }
+    ],
+    "FKcontraints": {
+      "id": "person.id"
+    }
+  },
+  "employee_table": {
+    "FKcontraints": {
+      "id": "person.id"
+    },
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        }
+      }
+    ]
+  },
+  "department_table": {
+    "values": [
+      {
+        "d_id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "dept_name": {
+          "PK": 0,
+          "NN": 0,
+          "type": "str"
+        }
+      },
+      {
+        "d_id": 1,
+        "dept_name": "Computer Science"
+      }
+    ]
+  },
+  "person": {
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "person_name": {
+          "PK": 0,
+          "NN": 0,
+          "type": "str"
+        }
+      },
+      {
+        "id": 1,
+        "person_name": "Rahul"
+      }
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "user_table": {
+    "FKcontraints": {
+      "id": "person.id",
+      "d_id": "department_table.d_id"
+    },
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        },
+        "d_id": {
+          "PK": 0,
+          "NN": 0,
+          "type": "int"
+        }
+      }
+    ]
+  },
+  "employee_table": {
+    "FKcontraints": {
+      "id": "person.id"
+    },
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "name": {
+          "PK": 0,
+          "NN": 1,
+          "type": "str"
+        },
+        "salary": {
+          "PK": 0,
+          "NN": 0,
+          "type": "float"
+        }
+      }
+    ]
+  },
+  "department_table": {
+    "values": [
+      {
+        "d_id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "dept_name": {
+          "PK": 0,
+          "NN": 0,
+          "type": "str"
+        }
+      }
+    ]
+  },
+  "person": {
+    "values": [
+      {
+        "id": {
+          "PK": 1,
+          "NN": 1,
+          "type": "int"
+        },
+        "person_name": {
+          "PK": 0,
+          "NN": 0,
+          "type": "str"
+        }
+      }
+    ]
+  }
+}
