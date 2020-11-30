@@ -21,6 +21,10 @@ class Database:
         self.drop_schema_pattern = re.compile(r"^\s*drop\s+database\s+(\w+)\s*;?\s*$", re.IGNORECASE)
         self.insert_row_pattern = re.compile(r"^\s*insert\s+into\s+(\w+)\s+values\s*\((.*)\)\s*;?\s*$", re.IGNORECASE)
         self.delete_rows_pattern = re.compile(r"^\s*delete\s+from\s+(\w+)(\s+where\s+.*)?\s*;?\s*$", re.IGNORECASE)
+        self.start_transaction_pattern = re.compile(r"^\s*start\s+transaction\s*;?\s*$", re.IGNORECASE)
+        self.commit_pattern = re.compile(r"^\s*commit\s*;?\s*$", re.IGNORECASE)
+        self.rollback_pattern = re.compile(r"^\s*rollback\s*;?\s*$", re.IGNORECASE)
+        self.exit_pattern = re.compile(r":q")
 
     def parse_query(self, query):
         # create schema
@@ -103,12 +107,30 @@ class Database:
                 where_condition = clean_where(where_condition)
             self.delete_rows(table_name, where_condition)
 
+        # start transaction
+        elif self.start_transaction_pattern.search(query):
+            self.start_transaction()
+
+        # commit transaction
+        elif self.commit_pattern.search(query):
+            self.commit_transaction()
+
+        # rollback transaction
+        elif self.rollback_pattern.search(query):
+            self.rollback_transaction()
+
+        # exit from program
+        elif self.exit_pattern.search(query):
+            exit()
+
         # incorrect query
         else:
             print("Invalid SQL syntax! Try again.")
 
     def create_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
+            print("Error! Schema already exists.")
+        if "$"+self.schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
         else:
             json.dump({}, open(os.path.join(self.schemas_directory, schema_name), "w+"), indent=2)
@@ -127,12 +149,17 @@ class Database:
             self.schema = json.load(open(os.path.join(self.schemas_directory, schema_name), "r"))
             self.schema_name = schema_name
             print("Current Schema:", self.schema_name)
+        elif "$"+schema_name in os.listdir(self.schemas_directory):
+            print("Schema is being locked by other user. Please try later.")
         else:
             print("No such schema exists!")
 
     def drop_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
             os.remove(os.path.join(self.schemas_directory, schema_name))
+            print("Dropped", schema_name)
+        if "$"+self.schema_name in os.listdir(self.schemas_directory):
+            os.remove(os.path.join(self.schemas_directory, "$"+schema_name))
             print("Dropped", schema_name)
         else:
             print("No such schema exists!")
@@ -171,7 +198,8 @@ class Database:
                 return
         self.schema[table_name] = {}
         self.schema[table_name]["values"] = values
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+        if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("created table:", table_name)
 
     def select_table(self, table_name, columns, where_condition):
@@ -240,8 +268,8 @@ class Database:
         else:
             for row in rows:
                 updated_rows(row)
-
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+        if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("Number of rows updated:", rows_count)
 
     def drop_table(self, table_name):
@@ -255,7 +283,8 @@ class Database:
             print("Table does not exist")
             return
         self.schema.pop(table_name, None)
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+        if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("dropped", table_name)
 
     def insert_row(self, table_name, values):
@@ -278,7 +307,8 @@ class Database:
             row[column_names[i]] = values[i]
         self.schema[table_name]["values"].append(row)
         print("1 row inserted")
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+        if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
 
     def delete_rows(self, table_name, where_condition):
         if self.schema is None:
@@ -300,12 +330,48 @@ class Database:
                 return
         else:
             self.schema[table_name]["values"] = self.schema[table_name]["values"][0:1]
-            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+            if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+                json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print(len(rows), "rows deleted")
             return
         self.schema[table_name]["values"][1:] = [row for row in rows if row not in filtered_rows]
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+        if "$"+self.schema_name not in os.listdir(self.schemas_directory):
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print(len(filtered_rows), "rows deleted")
+
+    def start_transaction(self):
+        if self.schema is None:
+            print("Select a schema first")
+            return
+        if "$"+self.schema_name in os.listdir(self.schemas_directory):
+            print("Transaction already in place")
+            return
+        from_path = str(os.path.join(self.schemas_directory, self.schema_name))
+        to_path = str(os.path.join(self.schemas_directory, "$"+self.schema_name))
+        os.rename(from_path, to_path)
+        print("transaction started")
+
+    def commit_transaction(self):
+        if self.schema is None:
+            print("Select a schema first")
+            return
+        if "$"+self.schema_name in os.listdir(self.schemas_directory):
+            from_path = str(os.path.join(self.schemas_directory, "$"+self.schema_name))
+            to_path = str(os.path.join(self.schemas_directory, self.schema_name))
+            os.rename(from_path, to_path)
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+            print("transaction committed")
+
+    def rollback_transaction(self):
+        if self.schema is None:
+            print("Select a schema first")
+            return
+        if "$"+self.schema_name in os.listdir(self.schemas_directory):
+            from_path = str(os.path.join(self.schemas_directory, "$"+self.schema_name))
+            to_path = str(os.path.join(self.schemas_directory, self.schema_name))
+            os.rename(from_path, to_path)
+            self.schema = json.load(open(os.path.join(self.schemas_directory, self.schema_name), "r"))
+            print("transaction rolled back")
 
 
 def get_path(schema_name):
