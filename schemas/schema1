@@ -26,6 +26,21 @@
           "NN": 0,
           "type": "int"
         }
+      },
+      {
+        "id": 1,
+        "name": "Harpreet",
+        "salary": 45.56
+      },
+      {
+        "id": 2,
+        "name": "Arthy",
+        "salary": 45.56
+      },
+      {
+        "id": 3,
+        "name": "Jeyanth",
+        "salary": 45.56
       }
     ]
   },
@@ -66,6 +81,10 @@
           "NN": 0,
           "type": "str"
         }
+      },
+      {
+        "d_id": 1,
+        "dept_name": "Computer Science"
       }
     ]
   },
@@ -82,6 +101,10 @@
           "NN": 0,
           "type": "str"
         }
+      },
+      {
+        "id": 1,
+        "person_name": "Rahul"
       }
     ]
   }
