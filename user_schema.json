@@ -1,40 +1,40 @@
 [
-   {
-      "id":1,
-      "name":"harpreet",
-      "pass":"harpreet123",
-      "schemas":{
-         "schema1":[
-            "C",
-            "R",
-            "U",
-            "D"
-         ],
-         "schema2":[
-            "C",
-            "R"
-         ]
-      }
-   },
-   {
-      "id":2,
-      "name":"arthy",
-      "pass":"arthy123",
-      "schemas":{
-         "schema1":[
-            "R"
-         ]
-      }
-   },
-   {
-      "id":3,
-      "name":"jeyanth",
-      "pass":"jeyanth123",
-      "schemas":{
-         "schema2":[
-            "R",
-            "U"
-         ]
-      }
-   }
+  {
+    "id": 1,
+    "name": "harpreet",
+    "pass": "harpreet123",
+    "schemas": {
+      "schema1": [
+        "C",
+        "R",
+        "U",
+        "D"
+      ],
+      "schema2": [
+        "C",
+        "R"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "name": "arthy",
+    "pass": "arthy123",
+    "schemas": {
+      "schema1": [
+        "R"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "name": "jeyanth",
+    "pass": "jeyanth123",
+    "schemas": {
+      "schema2": [
+        "R",
+        "U"
+      ]
+    }
+  }
 ]
