@@ -375,7 +375,6 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("foreign key constraint added")
 
-
     def start_transaction(self):
         if self.schema is None:
             print("Select a schema first")
