@@ -13,5 +13,5 @@ for schema_file in os.listdir(schema_path):
     schema = json.load(open(os.path.join("schemas", schema_file), "r"))
     for key in schema.keys():
         schema[key]["values"] = schema[key]["values"][0:1]
-    json.dump(schema, open(os.path.join("metadata", schema_file+"_metadata"), "w+"))
+    json.dump(schema, open(os.path.join("metadata", schema_file+"_metadata"), "w+"), indent=2)
 print("Metadata generated")

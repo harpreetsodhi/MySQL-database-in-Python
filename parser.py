@@ -111,7 +111,7 @@ class Database:
         if schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
         else:
-            json.dump({}, open(os.path.join(self.schemas_directory, schema_name), "w+"))
+            json.dump({}, open(os.path.join(self.schemas_directory, schema_name), "w+"), indent=2)
             # call a method to add the schema name to the user file with full access
             # add_schema_to_user(self.user_name, schema_name, ["C", "R", "U", "D"])
             print("Schema created with name:", schema_name)
@@ -171,7 +171,7 @@ class Database:
                 return
         self.schema[table_name] = {}
         self.schema[table_name]["values"] = values
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("created table:", table_name)
 
     def select_table(self, table_name, columns, where_condition):
@@ -241,7 +241,7 @@ class Database:
             for row in rows:
                 updated_rows(row)
 
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("Number of rows updated:", rows_count)
 
     def drop_table(self, table_name):
@@ -255,7 +255,7 @@ class Database:
             print("Table does not exist")
             return
         self.schema.pop(table_name, None)
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("dropped", table_name)
 
     def insert_row(self, table_name, values):
@@ -278,7 +278,7 @@ class Database:
             row[column_names[i]] = values[i]
         self.schema[table_name]["values"].append(row)
         print("1 row inserted")
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
 
     def delete_rows(self, table_name, where_condition):
         if self.schema is None:
@@ -300,11 +300,11 @@ class Database:
                 return
         else:
             self.schema[table_name]["values"] = self.schema[table_name]["values"][0:1]
-            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+            json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print(len(rows), "rows deleted")
             return
         self.schema[table_name]["values"][1:] = [row for row in rows if row not in filtered_rows]
-        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"))
+        json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print(len(filtered_rows), "rows deleted")
 
 
