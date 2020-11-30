@@ -1,9 +1,5 @@
 {
   "user_table": {
-    "FKcontraints": {
-      "id": "person.id",
-      "d_id": "department_table.d_id"
-    },
     "values": [
       {
         "id": {
@@ -42,7 +38,10 @@
         "name": "Jeyanth",
         "salary": 45.56
       }
-    ]
+    ],
+    "FKcontraints": {
+      "id": "person.id"
+    }
   },
   "employee_table": {
     "FKcontraints": {
