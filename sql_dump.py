@@ -10,7 +10,7 @@ class SQL_dump:
             for file in self.files:
                 with open(os.path.join("schemas", file), "r") as f_obj:
                     filedata = eval(f_obj.read())
-                    out_obj.write("CREATE DATABASE schema\n")
+                    out_obj.write("CREATE DATABASE " +file.split(".")[0]+"\n")
                     for table in filedata.keys():            
                         create_table_query="CREATE TABLE "+table+" ("
                         column_list=list(filedata[table]["values"][0].keys())

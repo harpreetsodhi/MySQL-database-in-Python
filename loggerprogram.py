@@ -45,4 +45,4 @@ def main(name):
     a.general_log()
 
 if __name__ == "__main__":
-    main()
+    main('jeyanth')

@@ -8,7 +8,6 @@ class ERD_Table:
 
     def schema_parser(self):
         for file in self.files:
-            print(file)
             with open(os.path.join("schemas", file), "r") as f_obj:
                 filedata = eval(f_obj.read())
                 for keys in filedata:
@@ -27,6 +26,8 @@ class ERD_Table:
                             self.output[keys][associated_table][1].extend(list(filedata[associated_table]
                                                                                ["values"][0].keys()))
                             self.output[keys][associated_table][1].remove(fk)
+                print(file)
+                self.table_display()
 
     def table_display(self):
         for key in self.output:
@@ -49,7 +50,7 @@ class ERD_Table:
 def main():
     a = ERD_Table()
     a.schema_parser()
-    a.table_display()
+    # a.table_display()
 
 if __name__ == "__main__":
     main()

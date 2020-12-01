@@ -14,7 +14,7 @@
         "C",
         "R"
       ],
-      "csci5408_schema":[
+      "csci5408_schema": [
         "C",
         "R",
         "U",
@@ -53,7 +53,13 @@
         "U",
         "D"
       ],
-      "csci5408_schema":[
+      "csci5408_schema": [
+        "C",
+        "R",
+        "U",
+        "D"
+      ],
+      "jeyanth": [
         "C",
         "R",
         "U",

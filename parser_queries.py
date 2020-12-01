@@ -162,6 +162,7 @@ class Database:
             auth.add_schema_to_user(self.user_name, schema_name, ["C", "R", "U", "D"])
             print("Schema created with name:", schema_name)
             self.events_logger.info("Schema created with name:"+ schema_name)
+            self.events_logger.info("Query : "+self.query)
 
     def use_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
@@ -177,6 +178,7 @@ class Database:
             self.schema = json.load(open(os.path.join(self.schemas_directory, schema_name), "r"))
             self.schema_name = schema_name
             print("Current Schema:", self.schema_name)
+            self.events_logger.info("Query : "+self.query)
         elif "$" + schema_name in os.listdir(self.schemas_directory):
             print("Schema is being locked by other user. Please try later.")
             self.events_logger.info("Schema is being locked by other user."+schema_name)
@@ -189,10 +191,12 @@ class Database:
             os.remove(os.path.join(self.schemas_directory, schema_name))
             print("Dropped", schema_name)
             self.events_logger.info("Dropped"+schema_name)
+            self.events_logger.info("Query : "+self.query)
         if "$" + self.schema_name in os.listdir(self.schemas_directory):
             os.remove(os.path.join(self.schemas_directory, "$" + schema_name))
             print("Dropped", schema_name)
             self.events_logger.info("Dropped"+schema_name)
+            self.events_logger.info("Query : "+self.query)
         else:
             print("No such schema exists!")
             self.events_logger.error("Schema not found"+schema_name)
@@ -238,6 +242,7 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("created table:", table_name)
         self.events_logger.info("created table: " +table_name)
+        self.events_logger.info("Query : "+self.query)
 
     def select_table(self, table_name, columns, where_condition):
         if self.schema is None:
@@ -273,6 +278,7 @@ class Database:
             print(json.dumps(rows, indent=2))
             return
         print(json.dumps([{i: row[i] for i in columns} for row in rows], indent=2))
+        self.events_logger.info("Query : "+self.query)
 
     def update_table(self, table_name, update_condition, where_condition):
         if self.schema is None:
@@ -317,6 +323,7 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("Number of rows updated:", rows_count)
         self.events_logger.info("Number of rows updated: " + str(rows_count))
+        self.events_logger.info("Query : "+self.query)
 
     def drop_table(self, table_name):
         if self.schema is None:
@@ -334,7 +341,8 @@ class Database:
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("dropped", table_name)
-        self.events_logger.error("dropped", table_name)
+        self.events_logger.error("dropped "+ table_name)
+        self.events_logger.info("Query : "+self.query)
 
     def insert_row(self, table_name, values):
         if self.schema is None:
@@ -362,6 +370,7 @@ class Database:
         self.events_logger.info("1 row inserted " + table_name )
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
+            self.events_logger.info("Query : "+self.query)
 
     def delete_rows(self, table_name, where_condition):
         if self.schema is None:
@@ -396,6 +405,7 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print(len(filtered_rows), "rows deleted")
         self.events_logger.info(str(len(filtered_rows))+ " rows deleted "+ table_name)
+        self.events_logger.info("Query : "+self.query)
 
     def create_foreign_key(self, table1, column1, table2, column2):
         if self.schema is None:
@@ -425,6 +435,7 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("foreign key constraint added")
         self.events_logger.info("foreign key constraint added")
+        self.events_logger.info("Query : "+self.query)
 
     def start_transaction(self):
         if self.schema is None:
@@ -438,6 +449,7 @@ class Database:
         os.rename(from_path, to_path)
         print("transaction started")
         self.events_logger.info("transaction started")
+        self.events_logger.info("Query : "+self.query)
 
     def commit_transaction(self):
         if self.schema is None:
@@ -450,6 +462,7 @@ class Database:
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print("transaction committed")
             self.events_logger.info("transaction committed")
+            self.events_logger.info("Query : "+self.query)
 
     def rollback_transaction(self):
         if self.schema is None:
@@ -462,6 +475,7 @@ class Database:
             self.schema = json.load(open(os.path.join(self.schemas_directory, self.schema_name), "r"))
             print("transaction rolled back")
             self.events_logger.error("transaction rolled back")
+            self.events_logger.info("Query : "+self.query)
 
 
 def get_path(schema_name):
