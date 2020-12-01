@@ -18,9 +18,10 @@ class Authentication:
         self.load_users()
         if self.users_list:
             for users in self.users_list:
-                for key, value in users.items():
-                    if schema_name in users['schemas']:
-                        return users['schemas'][schema_name]
+                if users["name"] == user_name:
+                    for key, value in users.items():
+                        if schema_name in users['schemas']:
+                            return users['schemas'][schema_name]
         return None
 
     # authenticates the entering user and shifts control to parser
