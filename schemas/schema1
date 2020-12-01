@@ -40,7 +40,8 @@
       }
     ],
     "FKcontraints": {
-      "id": "person.id"
+      "id": "person.id",
+      "d_id": "department_table.d_id"
     }
   },
   "employee_table": {

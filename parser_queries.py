@@ -1,13 +1,13 @@
 import re
 import os
 import json
-from collections import OrderedDict
+import authentication
 
 
 class Database:
-    def __init__(self, location):
-        self.user_name = "harpreet"
-        self.user_access = ["C", "R", "U", "D"]
+    def __init__(self, location, user_name):
+        self.user_name = user_name
+        self.user_access = None
         self.schema = None
         self.schema_name = ""
         self.schemas_directory = location
@@ -142,22 +142,24 @@ class Database:
     def create_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
-        if "$" + self.schema_name in os.listdir(self.schemas_directory):
+        elif "$" + self.schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
         else:
             json.dump({}, open(os.path.join(self.schemas_directory, schema_name), "w+"), indent=2)
-            # call a method to add the schema name to the user file with full access
-            # add_schema_to_user(self.user_name, schema_name, ["C", "R", "U", "D"])
+            auth = authentication.Authentication()
+            auth.add_schema_to_user(self.user_name, schema_name, ["C", "R", "U", "D"])
             print("Schema created with name:", schema_name)
 
     def use_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
             # call a method and send user_name and schema_name to check for access
-            # access_level = check_access(self.user_name, self.schema_name):
-            #   if access_level is None:
-            #       print("You don't have access to this schema")
-            #   else:
-            #       self.user_access = access_level
+            auth = authentication.Authentication()
+            access_level = auth.check_access(self.user_name, schema_name)
+            if access_level is None:
+                print("You don't have access to this schema")
+                return
+            else:
+                self.user_access = access_level
             self.schema = json.load(open(os.path.join(self.schemas_directory, schema_name), "r"))
             self.schema_name = schema_name
             print("Current Schema:", self.schema_name)
@@ -425,8 +427,8 @@ def clean_where(where_condition):
     return where_condition
 
 
-def main():
-    database = Database(get_path("schemas"))
+def main(user_name):
+    database = Database(get_path("schemas"), user_name)
     print("Welcome to DBMS")
     while True:
         query = input(">>")
@@ -434,4 +436,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main("harpreet")

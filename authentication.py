@@ -1,9 +1,12 @@
 import json
 import os
+import parser_queries
+
 
 class Authentication:
     def __init__(self):
         self.users_list = None
+        self.load_users()
 
     # loads the user_schema file
     def load_users(self):
@@ -18,7 +21,6 @@ class Authentication:
                 for key, value in users.items():
                     if schema_name in users['schemas']:
                         return users['schemas'][schema_name]
-        print('Not an authorised user!')
         return None
 
     # authenticates the entering user and shifts control to parser
@@ -32,8 +34,8 @@ class Authentication:
                         print('Enter password:')
                         user_pwd = input('>>')
                         if users['pass'] == user_pwd:
-                            # call parser and pass user_name
-                            print("Password is valid!")
+                            print("User Authenticated")
+                            parser_queries.main(user_name)
                             return                         
                         else:
                             print('Password is not valid!')
@@ -47,13 +49,15 @@ class Authentication:
                 for key, value in users.items():
                     if users['name'] == user_name:
                         users['schemas'][schema_name] = access
-        json.dump(self.users_list, open(os.path.join("user_schema.json"), "w+"), indent = 2)
-        
+        json.dump(self.users_list, open(os.path.join("user_schema.json"), "w+"), indent=2)
+
+
 def main():
     a = Authentication()
     a.load_users()
-    # a.verify_user()
-    a.add_schema_to_user("harpreet","test",[1,2,3])
+    a.verify_user()
+    # a.add_schema_to_user("harpreet", "test", [1, 2, 3])
+
 
 if __name__ == "__main__":
     main()
