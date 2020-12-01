@@ -14,19 +14,7 @@
         "C",
         "R"
       ],
-      "asdjflasd": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "csci_5408": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "csci5408_schema": [
+      "csci5408_schema":[
         "C",
         "R",
         "U",
@@ -42,49 +30,7 @@
       "schema1": [
         "R"
       ],
-      "schema3": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "schema4": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "schzsdf": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
       "schema2": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "asdjflajsd": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "aksdfj": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "ajsdf": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
-      "jeyanth": [
         "C",
         "R",
         "U",
@@ -97,11 +43,17 @@
     "name": "jeyanth",
     "pass": "jeyanth123",
     "schemas": {
-      "schema2": [
+      "schema1": [
         "R",
         "U"
       ],
-      "alksdjf": [
+      "schema2": [
+        "C",
+        "R",
+        "U",
+        "D"
+      ],
+      "csci5408_schema":[
         "C",
         "R",
         "U",
