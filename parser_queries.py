@@ -387,13 +387,13 @@ class Database:
             if "$" + self.schema_name not in os.listdir(self.schemas_directory):
                 json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print(len(rows), "rows deleted")
-            self.events_logger.info(str(len(rows)), " rows deleted ", table_name)
+            self.events_logger.info(str(len(rows))+ " rows deleted "+ table_name)
             return
         self.schema[table_name]["values"][1:] = [row for row in rows if row not in filtered_rows]
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print(len(filtered_rows), "rows deleted")
-        self.events_logger.info(str(len(filtered_rows)), " rows deleted ", table_name)
+        self.events_logger.info(str(len(filtered_rows))+ " rows deleted "+ table_name)
 
     def create_foreign_key(self, table1, column1, table2, column2):
         if self.schema is None:
