@@ -4,12 +4,6 @@
     "name": "harpreet",
     "pass": "harpreet123",
     "schemas": {
-      "schema1": [
-        "C",
-        "R",
-        "U",
-        "D"
-      ],
       "schema2": [
         "C",
         "R"
