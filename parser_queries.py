@@ -2,10 +2,12 @@ import re
 import os
 import json
 import authentication
-
+import loggerprogram
+import logging
 
 class Database:
     def __init__(self, location, user_name):
+        self. events_logger = logging.getLogger('Event_Log')
         self.user_name = user_name
         self.user_access = None
         self.schema = None
