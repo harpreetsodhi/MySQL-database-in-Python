@@ -36,8 +36,10 @@ class Database:
         self.commit_pattern = re.compile(r"^\s*commit\s*;?\s*$", re.IGNORECASE)
         self.rollback_pattern = re.compile(r"^\s*rollback\s*;?\s*$", re.IGNORECASE)
         self.exit_pattern = re.compile(r":q")
+        self.query = ""
 
     def parse_query(self, query):
+        self.query = query
         # create schema
         if self.create_schema_pattern.search(query):
             self.create_schema(self.create_schema_pattern.search(query).group(2))
