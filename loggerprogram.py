@@ -29,7 +29,6 @@ class DataLogger:
         events_logger.setLevel(logging.DEBUG)
         events_logger.addHandler(handler1)
         events_logger = LoggerAdapter(events_logger, self.user_name)
-        events_logger.info("EVENT LOGS STARTED")
 
     def general_log(self):
         #second Logger
@@ -38,8 +37,7 @@ class DataLogger:
         handler2.setFormatter(self.formatter)
         general_logger.setLevel(logging.DEBUG)
         general_logger.addHandler(handler2)
-        general_logger = LoggerAdapter(general_logger, self.user_name)
-        general_logger.info("GENERAL LOGS STARTED")
+        general_logger = LoggerAdapter(general_logger, self.user_name)  
 
 def main(name):
     a = DataLogger(name)

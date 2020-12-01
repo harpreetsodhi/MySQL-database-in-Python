@@ -4,11 +4,15 @@ import json
 import authentication
 import loggerprogram
 import logging
+import time
 
 class Database:
     def __init__(self, location, user_name):
-        self. events_logger = logging.getLogger('Event_Log')
+        self.events_logger = logging.getLogger('Event_Log')
+        self.general_logger = logging.getLogger('General_Log')
         self.user_name = user_name
+        self.general_logger = loggerprogram.LoggerAdapter(self.general_logger, self.user_name)
+        self.events_logger = loggerprogram.LoggerAdapter(self.events_logger, self.user_name)
         self.user_access = None
         self.schema = None
         self.schema_name = ""
@@ -140,17 +144,21 @@ class Database:
         # incorrect query
         else:
             print("Invalid SQL syntax! Try again.")
+            self.events_logger.error("Invalid SQL syntax!")
 
     def create_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
+            self.events_logger.error("Error! Schema already exists.")
         elif "$" + self.schema_name in os.listdir(self.schemas_directory):
             print("Error! Schema already exists.")
+            self.events_logger.error("Error! Schema already exists.")
         else:
             json.dump({}, open(os.path.join(self.schemas_directory, schema_name), "w+"), indent=2)
             auth = authentication.Authentication()
             auth.add_schema_to_user(self.user_name, schema_name, ["C", "R", "U", "D"])
             print("Schema created with name:", schema_name)
+            self.events_logger.info("Schema created with name:"+ schema_name)
 
     def use_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
@@ -159,6 +167,7 @@ class Database:
             access_level = auth.check_access(self.user_name, schema_name)
             if access_level is None:
                 print("You don't have access to this schema")
+                self.events_logger.error("You don't have access to this schema"+schema_name)
                 return
             else:
                 self.user_access = access_level
@@ -167,18 +176,23 @@ class Database:
             print("Current Schema:", self.schema_name)
         elif "$" + schema_name in os.listdir(self.schemas_directory):
             print("Schema is being locked by other user. Please try later.")
+            self.events_logger.info("Schema is being locked by other user."+schema_name)
         else:
             print("No such schema exists!")
+            self.events_logger.error("Schema not found!"+schema_name)
 
     def drop_schema(self, schema_name):
         if schema_name in os.listdir(self.schemas_directory):
             os.remove(os.path.join(self.schemas_directory, schema_name))
             print("Dropped", schema_name)
+            self.events_logger.info("Dropped"+schema_name)
         if "$" + self.schema_name in os.listdir(self.schemas_directory):
             os.remove(os.path.join(self.schemas_directory, "$" + schema_name))
             print("Dropped", schema_name)
+            self.events_logger.info("Dropped"+schema_name)
         else:
             print("No such schema exists!")
+            self.events_logger.error("Schema not found"+schema_name)
 
     def create_table(self, table_name, columns):
         if self.schema is None:
@@ -186,9 +200,11 @@ class Database:
             return
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
+            self.events_logger.error("Schema access denied ")
             return
         if table_name in self.schema.keys():
             print("Table name already exists")
+            self.events_logger.info("Table already exists")
             return
         values = [{}]
         for column in columns:
@@ -211,12 +227,14 @@ class Database:
                 values[0][column_name] = meta_data
             else:
                 print("Invalid Syntax! Please refer the sql syntax for creating table.")
+                self.events_logger.info("Invalid Syntax for creating table! ")
                 return
         self.schema[table_name] = {}
         self.schema[table_name]["values"] = values
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("created table:", table_name)
+        self.events_logger.info("created table: " +table_name)
 
     def select_table(self, table_name, columns, where_condition):
         if self.schema is None:
@@ -224,9 +242,11 @@ class Database:
             return
         if "R" not in self.user_access:
             print("You don't have read access to this schema")
+            self.events_logger.error("You don't have read access to this schema " +table_name)
             return
         if table_name not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.error("Table does not exist " +table_name)
             return
         meta_data = self.schema[table_name]["values"][0]
         for column in columns:
@@ -235,6 +255,7 @@ class Database:
             else:
                 if column not in meta_data.keys():
                     print("Column Error! Column name does not exist")
+                    self.events_logger.error("Column Error! Column name does not exist")
                     return
         rows = self.schema[table_name]["values"][1:]
         if where_condition:
@@ -242,6 +263,7 @@ class Database:
                 rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
             except:
                 print("Error! Invalid where clause")
+                self.events_logger.error("Error! Invalid where clause")
                 return
         print("Number of rows:", len(rows))
         if "*" in columns:
@@ -255,9 +277,11 @@ class Database:
             return
         if "U" not in self.user_access:
             print("You don't have update access to this schema")
+            self.events_logger.error("Access denied")
             return
         if table_name not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.error("Table does not exist "+table_name)
             return
         rows = self.schema[table_name]["values"][1:]
         if where_condition:
@@ -265,11 +289,13 @@ class Database:
                 rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
             except:
                 print("Error! Invalid where clause")
+                self.events_logger.error("Error! Invalid where clause ")
                 return
         try:
             map(lambda row: exec(f"{update_condition}", locals(), row), rows)
         except:
             print("Error! Invalid update parameters")
+            self.events_logger.error("Error! Invalid update parameters")
             return
         rows_count = len(rows)
         rows = self.schema[table_name]["values"][1:]
@@ -287,6 +313,7 @@ class Database:
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("Number of rows updated:", rows_count)
+        self.events_logger.info("Number of rows updated: " + rows_count)
 
     def drop_table(self, table_name):
         if self.schema is None:
@@ -294,14 +321,17 @@ class Database:
             return
         if "D" not in self.user_access:
             print("You don't have delete access to this schema")
+            self.events_logger.error("You don't have delete access to this schema")
             return
         if table_name not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.error("Table does not exist")
             return
         self.schema.pop(table_name, None)
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("dropped", table_name)
+        self.events_logger.error("dropped", table_name)
 
     def insert_row(self, table_name, values):
         if self.schema is None:
@@ -309,20 +339,24 @@ class Database:
             return
         if "C" not in self.user_access:
             print("You don't have write access to this schema")
+            self.events_logger.error("You don't have write access to this schema")
             return
         if table_name not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.error("Table does not exist" +table_name)
             return
         column_names = list(self.schema[table_name]['values'][0].keys())
         no_of_columns = len(column_names)
         if len(values) != no_of_columns:
             print("Invalid Syntax! Please refer the sql syntax for inserting rows.")
+            self.events_logger.error("Invalid Syntax! Please refer the sql syntax for inserting rows. " )
             return
         row = {}
         for i in range(no_of_columns):
             row[column_names[i]] = values[i]
         self.schema[table_name]["values"].append(row)
         print("1 row inserted")
+        self.events_logger.info("1 row inserted " + table_name )
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
 
@@ -332,9 +366,11 @@ class Database:
             return
         if "D" not in self.user_access:
             print("You don't have delete access to this schema")
+            self.events_logger.error("You don't have delete access to this schema")
             return
         if table_name not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.error("Table does not exist")
             return
         rows = self.schema[table_name]["values"][1:]
         filtered_rows = []
@@ -343,17 +379,20 @@ class Database:
                 filtered_rows = list(filter(lambda row: eval(f"{where_condition}", locals(), row), rows))
             except:
                 print("Error! Invalid where clause")
+                self.events_logger.error("Error! Invalid where clause")
                 return
         else:
             self.schema[table_name]["values"] = self.schema[table_name]["values"][0:1]
             if "$" + self.schema_name not in os.listdir(self.schemas_directory):
                 json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print(len(rows), "rows deleted")
+            self.events_logger.info(len(rows)+ " rows deleted "+ table_name)
             return
         self.schema[table_name]["values"][1:] = [row for row in rows if row not in filtered_rows]
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print(len(filtered_rows), "rows deleted")
+        self.events_logger.info(len(filtered_rows)+ " rows deleted "+ table_name)
 
     def create_foreign_key(self, table1, column1, table2, column2):
         if self.schema is None:
@@ -361,15 +400,19 @@ class Database:
             return
         if table1 not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.info("Table does not exist")
             return
         if table2 not in self.schema.keys():
             print("Table does not exist")
+            self.events_logger.info("Table does not exist")
             return
         if column1 not in self.schema[table1]["values"][0].keys():
             print("Column does not exist")
+            self.events_logger.info("Column does not exist")
             return
         if column2 not in self.schema[table2]["values"][0].keys():
             print("Column does not exist")
+            self.events_logger.info("Column does not exist")
             return
         if "FKcontraints" in self.schema[table1].keys():
             self.schema[table1]["FKcontraints"][column1] = table2+"."+column2
@@ -378,6 +421,7 @@ class Database:
         if "$" + self.schema_name not in os.listdir(self.schemas_directory):
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
         print("foreign key constraint added")
+        self.events_logger.info("foreign key constraint added")
 
     def start_transaction(self):
         if self.schema is None:
@@ -390,6 +434,7 @@ class Database:
         to_path = str(os.path.join(self.schemas_directory, "$" + self.schema_name))
         os.rename(from_path, to_path)
         print("transaction started")
+        self.events_logger.info("transaction started")
 
     def commit_transaction(self):
         if self.schema is None:
@@ -401,6 +446,7 @@ class Database:
             os.rename(from_path, to_path)
             json.dump(self.schema, open(os.path.join(self.schemas_directory, self.schema_name), "w+"), indent=2)
             print("transaction committed")
+            self.events_logger.info("transaction committed")
 
     def rollback_transaction(self):
         if self.schema is None:
@@ -412,6 +458,7 @@ class Database:
             os.rename(from_path, to_path)
             self.schema = json.load(open(os.path.join(self.schemas_directory, self.schema_name), "r"))
             print("transaction rolled back")
+            self.events_logger.error("transaction rolled back")
 
 
 def get_path(schema_name):
@@ -429,13 +476,27 @@ def clean_where(where_condition):
     return where_condition
 
 
+def schema_details(database):
+    files = os.listdir(os.path.join('schemas'))
+    for file in files:
+        with open(os.path.join("schemas", file), "r") as fh:
+             filedata = eval(fh.read())
+             database.general_logger.info(file+" schema has "+str(len(filedata.keys()))+" tables")
+             for table_name in filedata.keys():
+                database.general_logger.info(file+" schema has "+table_name+ " tables in it")
+                database.general_logger.info(table_name+" has "+str(len(filedata[table_name]['values'])-1)+" records in it")
+
 def main(user_name):
     database = Database(get_path("schemas"), user_name)
     print("Welcome to DBMS")
     while True:
         query = input(">>")
+        start_time = time.time()
         database.parse_query(query)
+        end_time = time.time()
+        database.general_logger.info("Query execution ended in " + str(end_time - start_time))
+        schema_details(database)
 
 
 if __name__ == "__main__":
-    main("harpreet")
+    main("harpreet")    
